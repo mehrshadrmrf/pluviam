@@ -14,7 +14,6 @@
 #include <iomanip>
 #include <chrono>
 
-
 // rain::genius::meta - Compile‑time type constraints and concepts
 
 namespace rain::genius::meta {
