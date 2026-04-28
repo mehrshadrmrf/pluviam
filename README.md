@@ -17,3 +17,5 @@ But the water is just an excuse. The real project is the **meta-architecture**:
 - **`rain::genius::meta`**: Custom `concepts` for arithmetic & iterator safety.
 - **`rain::genius::core`**: Zero-overhead dispatching between sequential and parallel backends.
 - **`rain::genius::interface`**: Fluent API design (`FluentTrap`) with automatic execution policy selection.
+
+Co-authored-by: @rm-IR
