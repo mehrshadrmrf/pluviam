@@ -520,6 +520,6 @@ int main() {
     std::cout << "   Classical O(1) space:    " << dur_classic.count() << " ms\n";
     std::cout << "   Parallel scan (OpenMP):  " << dur_parallel.count() << " ms\n";
 
-    std::cout << "\n All tests passed. The rain has been successfully trapped.\n";
+    std::cout << "\n All tests passed. \n";
     return 0;
 }
