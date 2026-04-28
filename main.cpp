@@ -476,7 +476,7 @@ int main() {
 
     const std::vector<int> heights_int = {0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1};
 
-    std::cout << "  Trapping Rain Water \n";
+    std::cout << "  Trapping Rain Water (OpenMP parallel) \n";
     std::cout << "==============================================\n\n";
 
     std::cout << "1. Free function trap():              " << trap(heights_int) << '\n';
