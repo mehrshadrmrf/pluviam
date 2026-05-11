@@ -13,8 +13,9 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <limits>   
 
-// rain::genius::meta - Compile‑time type constraints and concepts
+
 
 namespace rain::genius::meta {
 
@@ -36,9 +37,16 @@ template <typename Iter>
 concept RandomAccessIterator = std::random_access_iterator<Iter>;
 
 /**
+ * @concept ContiguousIterator
+ * @brief Satisfied by any contiguous iterator (e.g., pointers, vector::iterator).
+ */
+template <typename Iter>
+concept ContiguousIterator = std::contiguous_iterator<Iter>;
+
+/**
  * @concept SuitableForParallel
  * @brief Combines requirements for parallel algorithms:
- *        - the iterator is random‑access
+ *        - the iterator is random‑access and contiguous (needed to obtain a raw pointer)
  *        - its value type is arithmetic
  *        - exactly matches the explicitly given type T.
  * @tparam Iter iterator type
@@ -46,6 +54,7 @@ concept RandomAccessIterator = std::random_access_iterator<Iter>;
  */
 template <typename Iter, typename T>
 concept SuitableForParallel = RandomAccessIterator<Iter> &&
+    ContiguousIterator<Iter> &&
     std::is_arithmetic_v<std::iter_value_t<Iter>> &&
     std::is_same_v<std::iter_value_t<Iter>, T>;
 
@@ -115,12 +124,15 @@ namespace detail {
      *
      * @note The implementation assumes that out is pre‑allocated with at least n elements.
      *       It uses a chunk‑based local scan followed by a global fix‑up.
+     *       Handles negative values correctly by initialising chunk maximums to
+     *       std::numeric_limits<T>::lowest().
      */
     template <Arithmetic T>
-    void parallel_inclusive_scan_max(const T* __restrict first, std::size_t n,
-                                     T* __restrict out) {
+    void parallel_inclusive_scan_max(const T* first, std::size_t n,
+                                     T* out) {   // __restrict removed for portability
         int actual_nt = 1;
-        std::vector<T> chunk_max(omp_get_max_threads());
+
+        std::vector<T> chunk_max(omp_get_max_threads(), std::numeric_limits<T>::lowest());
 
         #pragma omp parallel
         {
@@ -139,6 +151,7 @@ namespace detail {
 
                 chunk_max[tid] = out[end - 1];
             }
+
         }
 
         // Propagate maximums across chunk boundaries.
@@ -155,6 +168,7 @@ namespace detail {
 
             if (tid > 0 && start < end) {
                 const T offset = chunk_max[tid - 1];
+
                 for (std::size_t i = start; i < end; ++i)
                     if (out[i] < offset) out[i] = offset;
             }
@@ -172,7 +186,7 @@ namespace detail {
  *        O(n) work, O(n) additional memory.
  *
  * @tparam T   arithmetic type.
- * @tparam Iter random‑access iterator satisfying SuitableForParallel<T>.
+ * @tparam Iter random‑access ***contiguous*** iterator satisfying SuitableForParallel<T>.
  * @param first, last the height range.
  * @return total trapped water.
  */
@@ -189,6 +203,7 @@ template <Arithmetic T, SuitableForParallel<T> Iter>
 
     // 1) left‑to‑right prefix maximum
     std::vector<T> left_max(n);
+
     detail::parallel_inclusive_scan_max(&(*first), n, left_max.data());
 
     // 2) right‑to‑left prefix maximum (computed by reversing the array)
